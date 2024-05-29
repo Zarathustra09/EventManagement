@@ -1,5 +1,6 @@
 using EventManagement.DataConnection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -7,6 +8,13 @@ using System.Text;
 using ConfigurationManager = EventManagement.ConfigurationManager;
 var builder = WebApplication.CreateBuilder(args);
 
+
+
+builder.Services.AddDbContext<DbContextClass>(options =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("WebApiDatabase");
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+});
 // Add services to the container.
 
 builder.Services.AddControllers();

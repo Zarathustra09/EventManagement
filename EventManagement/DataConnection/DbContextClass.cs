@@ -1,23 +1,26 @@
-﻿using Microsoft.EntityFrameworkCore;
-using EventManagement.Model;
-
+﻿using EventManagement.Model;
+using Microsoft.EntityFrameworkCore;
 
 namespace EventManagement.DataConnection
 {
     public class DbContextClass : DbContext
     {
         protected readonly IConfiguration Configuration;
-        public DbContextClass(IConfiguration configuration)
+
+        public DbContextClass(DbContextOptions<DbContextClass> options, IConfiguration configuration)
+            : base(options)
         {
             Configuration = configuration;
         }
-        protected override void OnConfiguring(DbContextOptionsBuilder options)
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            var connectionString = Configuration.GetConnectionString("WebApiDatabase");
-            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Login>().HasNoKey(); // Configure Login as a keyless entity
         }
 
-        public DbSet<Login> Logins { get; set; }
-
+        public DbSet<User> Users { get; set; }
+        public DbSet<Login> Logins { get; set; } // Add DbSet for Login if needed
     }
 }
