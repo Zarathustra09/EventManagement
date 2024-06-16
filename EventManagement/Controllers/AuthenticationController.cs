@@ -1,13 +1,14 @@
-﻿using EventManagement.DataConnection;
+using EventManagement.DataConnection;
 using EventManagement.Model;
+using EventManagement.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration; // Add this namespace
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -26,38 +27,97 @@ namespace EventManagement.Controllers
             _configuration = configuration; // Assign IConfiguration in constructor
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] Login login)
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] Login login)
+    {
+      if (login == null || string.IsNullOrWhiteSpace(login.UserName) || string.IsNullOrWhiteSpace(login.Password))
+      {
+        return BadRequest("Invalid user request");
+      }
+
+      var user = await _context.Users.SingleOrDefaultAsync(u => u.Username == login.UserName);
+
+      if (user == null || !VerifyPassword(login.Password, user.Password))
+      {
+        return Unauthorized();
+      }
+
+      var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+      var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
+      var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.Name, user.Username)
+    };
+
+      var tokenOptions = new JwtSecurityToken(
+          issuer: _configuration["JWT:ValidIssuer"],
+          audience: _configuration["JWT:ValidAudience"],
+          claims: claims,
+          expires: DateTime.Now.AddMinutes(30),
+          signingCredentials: signinCredentials
+      );
+
+      var tokenString = new JwtSecurityTokenHandler().WriteToken(tokenOptions);
+      return Ok(new { Token = tokenString });
+    }
+
+    [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
         {
-            if (login == null || string.IsNullOrWhiteSpace(login.UserName) || string.IsNullOrWhiteSpace(login.Password))
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Invalid user request");
+                return BadRequest(ModelState);
             }
 
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.Username == login.UserName);
-
-            if (user == null || user.Password != login.Password) // You should hash and compare passwords in a real app
+            var userExists = await _context.Users.AnyAsync(u => u.Username == registerDto.Username);
+            if (userExists)
             {
-                return Unauthorized();
+                return BadRequest("Username already exists.");
             }
 
-            var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"])); // Use IConfiguration to access configuration
-            var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
-            var claims = new List<Claim>
+            var hashedPassword = HashPassword(registerDto.Password);
+
+            var newUser = new User
             {
-                new Claim(ClaimTypes.Name, user.Username)
+                Username = registerDto.Username,
+                Password = hashedPassword,
+                Created_At = DateTime.UtcNow, // Set the creation timestamp
+                Updated_At = null // Initially no updates
             };
 
-            var tokenOptions = new JwtSecurityToken(
-                issuer: _configuration["JWT:ValidIssuer"],
-                audience: _configuration["JWT:ValidAudience"],
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(30),
-                signingCredentials: signinCredentials
-            );
+            _context.Users.Add(newUser);
+            await _context.SaveChangesAsync();
 
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(tokenOptions);
-            return Ok(new { Token = tokenString });
+            return Ok(new { message = "User registered successfully." });
         }
+
+    private string HashPassword(string password)
+    {
+      using (var hmac = new HMACSHA256())
+      {
+        var salt = hmac.Key;
+        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
+        return Convert.ToBase64String(salt) + ":" + Convert.ToBase64String(hash);
+      }
     }
+
+    private bool VerifyPassword(string enteredPassword, string storedPassword)
+    {
+      var parts = storedPassword.Split(':');
+      if (parts.Length != 2)
+      {
+        return false;
+      }
+
+      var salt = Convert.FromBase64String(parts[0]);
+      var storedHash = Convert.FromBase64String(parts[1]);
+
+      using (var hmac = new HMACSHA256(salt))
+      {
+        var enteredHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(enteredPassword));
+        return storedHash.SequenceEqual(enteredHash);
+      }
+    }
+  }
+
 }

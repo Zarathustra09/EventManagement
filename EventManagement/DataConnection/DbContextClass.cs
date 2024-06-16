@@ -1,4 +1,5 @@
-﻿using EventManagement.Model;
+using EventManagement.Model;
+using EventManagement.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventManagement.DataConnection
@@ -22,5 +23,7 @@ namespace EventManagement.DataConnection
 
         public DbSet<User> Users { get; set; }
         public DbSet<Login> Logins { get; set; } // Add DbSet for Login if needed
-    }
+
+       public DbSet<Event> Events { get; set; }
+  }
 }
