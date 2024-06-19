@@ -1,5 +1,6 @@
 using EventManagement.DataConnection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -52,6 +53,15 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
+builder.Services.AddAuthorization(options =>
+{;
+
+  options.AddPolicy("RequireAdministratorRole", policy =>
+        policy.RequireRole("1")); // Require role "1" (Administrator)
+
+});
+
 builder.Services.AddDbContext<DbContextClass>();
 builder.Services.AddAuthentication(opt => {
     opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

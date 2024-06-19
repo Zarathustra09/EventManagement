@@ -11,7 +11,7 @@ namespace EventManagement.Models
         public string? BackgroundColor { get; set; }
         public string? BorderColor { get; set; }
         public string? TextColor { get; set; }
-        public DateTime Created_At { get; set; }
+        public DateTime? Created_At { get; set; }
         public DateTime? Updated_At { get; set; }
     }
 }

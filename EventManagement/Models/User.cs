@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -19,8 +19,10 @@ namespace EventManagement.Model
         [StringLength(255)]
         public string Password { get; set; }
 
-        // Ensure you're referencing the correct column name (case-sensitive)
-        [Column(TypeName = "timestamp")]
+        public int Role { get; set; }
+
+    // Ensure you're referencing the correct column name (case-sensitive)
+       [Column(TypeName = "timestamp")]
         public DateTime? Created_At { get; set; }
 
         [Column(TypeName = "timestamp")]

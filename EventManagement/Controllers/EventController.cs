@@ -28,6 +28,7 @@ namespace EventManagement.Controllers
 
     // GET: api/Events/5
     [HttpGet("{id}")]
+    [Authorize(Roles = "1")]
     public async Task<ActionResult<Event>> GetEvent(int id)
     {
       var @event = await _context.Events.FindAsync(id);
@@ -42,6 +43,7 @@ namespace EventManagement.Controllers
 
     // PUT: api/Events/5
     [HttpPut("{id}")]
+    [Authorize(Roles = "1")]
     public async Task<IActionResult> PutEvent(int id, Event @event)
     {
       if (id != @event.Id)
@@ -84,6 +86,7 @@ namespace EventManagement.Controllers
 
     // DELETE: api/Events/5
     [HttpDelete("{id}")]
+    [Authorize(Roles = "1")]
     public async Task<IActionResult> DeleteEvent(int id)
     {
       var @event = await _context.Events.FindAsync(id);

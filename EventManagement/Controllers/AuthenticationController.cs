@@ -46,7 +46,8 @@ namespace EventManagement.Controllers
       var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
       var claims = new List<Claim>
     {
-        new Claim(ClaimTypes.Name, user.Username)
+        new Claim(ClaimTypes.Name, user.Username),
+        new Claim(ClaimTypes.Role, user.Role.ToString())
     };
 
       var tokenOptions = new JwtSecurityToken(
@@ -58,7 +59,7 @@ namespace EventManagement.Controllers
       );
 
       var tokenString = new JwtSecurityTokenHandler().WriteToken(tokenOptions);
-      return Ok(new { Token = tokenString });
+      return Ok(new { Token = tokenString, Role = user.Role });
     }
 
     [HttpPost("register")]
